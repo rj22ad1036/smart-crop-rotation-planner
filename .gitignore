@@ -1,2 +1,25 @@
 venv/
 /venv
+
+# Environment variables
+.env
+frontend/.env
+*.env.local
+
+# Node modules
+node_modules/
+frontend/node_modules/
+
+# Build outputs
+dist/
+frontend/dist/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db

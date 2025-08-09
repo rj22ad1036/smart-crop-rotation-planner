@@ -9,9 +9,16 @@
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@types/react": "^18.3.23",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^4.7.0",
+    "typescript": "^5.9.2",
     "vite": "^7.0.4"
   },
   "dependencies": {
-    "@vitejs/plugin-react": "^4.7.0"
+    "@react-oauth/google": "^0.12.2",
+    "jwt-decode": "^4.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   }
 }
