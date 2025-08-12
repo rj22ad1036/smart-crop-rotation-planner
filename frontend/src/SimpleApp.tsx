@@ -1,80 +1,104 @@
+import React, { useState } from "react";
 
-import { useState } from 'react';
-import Login from './pages/login';
-import './style.css';
+const CropForm: React.FC = () => {
+  const [formData, setFormData] = useState({
+    N: "",
+    P: "",
+    K: "",
+    temperature: "",
+    humidity: "",
+    ph: "",
+    rainfall: "",
+    previous_crop: ""
+  });
 
-interface User {
-  name?: string;
-  email?: string;
-  picture?: string;
-  [key: string]: any;
-}
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<{ predicted_crop: string; predicted_yield: number } | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-function SimpleApp() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-
-  const handleLogin = (userData: User) => {
-    console.log('User authenticated:', userData);
-    setIsAuthenticated(true);
-    setCurrentUser(userData);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    setCurrentUser(null);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setResult(null);
+
+    try {
+      const res = await fetch("http://localhost:8000/api/predict/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          N: Number(formData.N),
+          P: Number(formData.P),
+          K: Number(formData.K),
+          temperature: Number(formData.temperature),
+          humidity: Number(formData.humidity),
+          ph: Number(formData.ph),
+          rainfall: Number(formData.rainfall),
+          previous_crop: formData.previous_crop
+        })
+      });
+
+      if (!res.ok) throw new Error(`Server error: ${res.status}`);
+      const data = await res.json();
+
+      setResult(data);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Show login page if not authenticated
-  if (!isAuthenticated) {
-    return <Login onLogin={handleLogin} />;
-  }
-
-  // Show main app if authenticated
   return (
-    <div className="app">
-      <nav className="navbar">
-        <div className="nav-brand">
-          <h2>🌱 Smart Crop Rotation Planner</h2>
-        </div>
-        <div className="nav-menu">
-          <span>Welcome, {currentUser?.name || currentUser?.email || 'User'}</span>
-          <button onClick={handleLogout} className="btn btn-secondary">
-            Logout
-          </button>
-        </div>
-      </nav>
-      
-      <main className="main-content">
-        <div className="page-content">
-          <div className="hero-section">
-            <h1>🌱 Welcome to Your Crop Planner!</h1>
-            <p className="hero-subtitle">Successfully logged in to your account</p>
-            
-            <div className="features-grid">
-              <div className="feature-card">
-                <h3>🔄 Rotation Planning</h3>
-                <p>Create optimal crop rotation schedules</p>
-                <button className="btn btn-primary">Start Planning</button>
-              </div>
-              
-              <div className="feature-card">
-                <h3>📊 Analytics</h3>
-                <p>Track your crop performance</p>
-                <button className="btn btn-primary">View Analytics</button>
-              </div>
-              
-              <div className="feature-card">
-                <h3>🌿 Recommendations</h3>
-                <p>Get AI-powered suggestions</p>
-                <button className="btn btn-primary">Get Suggestions</button>
-              </div>
-            </div>
+    <div style={{ maxWidth: "500px", margin: "auto", padding: "20px" }}>
+      <h2>Crop & Yield Prediction</h2>
+      <form onSubmit={handleSubmit}>
+        {["N", "P", "K", "temperature", "humidity", "ph", "rainfall"].map((field) => (
+          <div key={field} style={{ marginBottom: "10px" }}>
+            <label>{field.toUpperCase()}:</label>
+            <input
+              type="number"
+              name={field}
+              value={(formData as any)[field]}
+              onChange={handleChange}
+              required
+              style={{ width: "100%", padding: "8px" }}
+            />
           </div>
+        ))}
+
+        <div style={{ marginBottom: "10px" }}>
+          <label>Previous Crop:</label>
+          <input
+            type="text"
+            name="previous_crop"
+            value={formData.previous_crop}
+            onChange={handleChange}
+            required
+            style={{ width: "100%", padding: "8px" }}
+          />
         </div>
-      </main>
+
+        <button type="submit" disabled={loading} style={{ padding: "10px 20px" }}>
+          {loading ? "Predicting..." : "Submit"}
+        </button>
+      </form>
+
+      {error && <p style={{ color: "red" }}>Error: {error}</p>}
+      {result && (
+        <div style={{ marginTop: "20px", padding: "10px", background: "#f0f0f0" }}>
+          <h3>Prediction Result</h3>
+          <p><strong>Crop:</strong> {result.predicted_crop}</p>
+          <p><strong>Yield:</strong> {result.predicted_yield} tons/ha</p>
+        </div>
+      )}
     </div>
   );
-}
+};
 
-export default SimpleApp;
+export default CropForm;
